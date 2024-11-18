@@ -1,0 +1,97 @@
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+startScreenCapture(2); // Привет
+setOCRLang("eng");
+
+//          〘 Режимы работы скрипта 〙
+// Вкл. - true : Выкл. - false
+boolean ssc     = true,     // НЕ ТРОГАТЬ!!!!
+        PodFull = false,    // Перебив под фулл (-0.01 от лота)
+        Rand    = false,    // Рандомный перебив (разница от запроса и лота)
+        Wait    = false,    // Ожидание перед тем, как поставить запрос
+        TwoZp   = false,    // Дабл запрос (двойной запрос)
+        Half    = false,    // Половина перебива (разницу запроса и лота делим на два)
+        Msg_Tg  = false,    // Отправка уведомления в телеграм (Когда пойман скин, название скина, баланс)
+        Mobile  = false;    // Режим работы для телефонов, если не видно запроса в окне заказать 
+
+//          〘 Задержки 〙
+short sleepToOpenKeyboard = 600,    // Задержка на открытие клавиатуры
+      sleepToOpenOrder    = 300,    // Задержка на открытие запроса
+      sleepCheckLot       = 5000,   // Задержка просмотра цены "Лота" (Менять по желанию)
+      sleepToPut          = 100,    // Задержка на кнопку "Вставить"
+      sleepCancel         = 1500,   // Задержка на отмену запроса (1000 = 1 сек)
+      sleepToZap          = 500,    // Задержка перед запросом (при Wait = true)
+      sleepCancelIn_TwoZp = 1000,   // Задержка на отмену запроса (при TwoZp = true)
+      sleepOrderIn_TwoZp  = 1000;   // Задержка перед новым запросом (при TwoZp = true)
+
+
+//          〘 Перебив 〙
+float perebiv = 0.01;  // Размер перебива
+
+
+//          〘 Координаты 〙
+Point LeftTopQuery        = Point.get(1,1),     // Верхняя левая точка запроса
+      RightBottomQuery    = Point.get(1,1),     // Правая нижняя точка запроса
+      PriceLotTop         = Point.get(1,1),     // Верхняя точка цены лота
+      PriceLotDown        = Point.get(1,1),     // Нижняя точка цены лота
+      Order               = Point.get(1,1),     // Кнопка "Заказ"
+      Back                = Point.get(1,1),     // Кнопка "Назад" (крестик)
+      Ok                  = Point.get(1,1),     // Кнопка "Ок"
+      Order2              = Point.get(1,1),     // Второй заказ
+      BackFromInspection  = Point.get(1,1),     // Кнопка "Назад" при проверке
+      cntr                = Point.get(1,1),     // Центр экрана
+      Cancel              = Point.get(1,1),     // Кнопка "Отмена"
+      firstPoint          = Point.get(1,1),     // Первый клик
+      secondPoint         = Point.get(1,1),     // Кнопка "Вставить"
+
+
+//          〘 Доп. Координаты для "Телефонов" 〙
+      scFrPoint           = Point.get(1,1),        // Кнопка "Троеточие"
+      CheckmarkOnKeyboard = Point.get(1,1);        // Галочка на клавиатуре
+
+
+//          〘 Цвет координат 〙
+int colorBack     = 6250334,    // Цвет кнопки "Назад"
+    colorOk       = 1;          // Цвет кнопки "Ок"    
+
+
+//          〘 Настройки для телефона 〙
+// Вкл. - true : Выкл. - false
+boolean toCb = false,    // Вставка через троеточие
+        toZp = false;    // Заказ скрыт в окне клавиатуры
+
+
+//          〘 Задержки под "Настройки для телефона" 〙
+short sleepBefore_scFrPoint       = 300,  // Задержка перед "Вставить" (при toCb = true)
+      sleepTo_firstPoint          = 200,  // Задержка перед первым кликом по цене (при toZp = true)
+      sleepTo_CheckmarkOnKeyboard = 20,   // Задержка перед нажатием галочки на клавиатуре (при toZp = true)
+      sleepAfterCloseKey          = 100;  // Задержка после нажатия галочки на клавиатуре
+
+
+//          〘 Настройки для уведомлений Telegram 〙
+Point LeftTopSkin        = Point.get(1,1),   // Верхняя левая точка названия скина
+      RightBotSkin       = Point.get(1,1),   // Правая нижняя точка названия скина
+
+      LeftTopBalance     = Point.get(1,1),   // Верхняя левая точка баланса
+      RightBotBalance    = Point.get(1,1);   // Правая нижняя точка баланса  
+
+String botToken = "ТОКЕН_БОТА",
+       chatId   = "ТВОЙ_АЙДИ", 
+
+       NameSkin = getText(LeftTopSkin, RightBotSkin);
+
+//          〘 Информация об авторах 〙
+log("Авторы: @omagadscam, @dasturdad");
+log("T.me/omagadcheats");
+log("T.me/scriptuc");
+log("Версия скрипта: P1.5");
+
+//          〘 Константы 〙
+byte maxclicks = 3;       // Максимальное количество кликов
+short omagad_dast = 100;  // Задержка после клика
+
+byte sleepWhile = 5;
+boolean scriptOn = false, wasScriptOn = false; 
+long lastUpdateTime = System.currentTimeMillis(), lastUpdateId = 0;
+float OrderPriceFloat = 0, priceLot = 0, oldOrder = 0, BalanceGold = 0, oldBalanceGold = 0;
